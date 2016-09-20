@@ -1,0 +1,37 @@
+#!/bin/bash
+COMMAND=`basename "$0"`
+SUBCOMMAND="$1"
+
+cd `dirname $0`
+COMMAND_DIR=`pwd`
+CONFIG_DIR="$COMMAND_DIR/config"
+APP_DIR="$COMMAND_DIR/app"
+
+if hash rbenv 2> /dev/null; then
+  RUBY_VERSION=$(cat "$COMMAND_DIR/../.ruby-version")
+  rbenv local $RUBY_VERSION
+else
+  echo "WARNING: rbenv not visible"
+fi
+
+cd "$APP_DIR"
+export REPORTER_ROOT="$APP_DIR"
+
+case "$SUBCOMMAND" in
+  "" | "help" )
+    cat "$COMMAND_DIR/doc/help.txt"
+    ;;
+  "run" )
+    bundle exec ruby -r"$CONFIG_DIR/environment.rb" "$APP_DIR/cli/$2.rb" ${@:3}
+    ;;
+  "worker" )
+    bundle exec sidekiq -r "$CONFIG_DIR/environment.rb"
+    ;;
+  "irb" )
+    bundle exec irb -r"$CONFIG_DIR/environment.rb"
+    ;;
+  "annotate" )
+    cd "$APP_DIR/.."
+    bundle exec annotate -p bottom -R "$CONFIG_DIR/environment.rb"
+    ;;
+esac
